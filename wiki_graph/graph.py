@@ -3,10 +3,13 @@ from collections import deque
 from typing import List, ClassVar, Union
 
 import attr
-import requests
 
-from scrape import name_to_url
-from node import WikiNode
+from wiki_graph.scrape import name_to_url
+from wiki_graph.node import WikiNode
+
+
+class GraphTypeError(Exception):
+    pass
 
 
 @attr.s(slots=True)
@@ -28,13 +31,34 @@ class WikiGraph(object):
     def __contains__(self, item: Union[str, WikiNode]):
         if isinstance(item, str):
             return item in self.node_map
+
         elif isinstance(item, WikiNode):
             return item.link in self.node_map
+
         else:
             raise NotImplementedError('What is {0!r}?'.format(type(item)))
 
     def __iter__(self):
         return iter(self.nodes)
+
+    def __repr__(self):
+        if self.nodes:
+            return '<WikiGraph: {0}>'.format(self.nodes[0])
+        else:
+            return '<WikiGraph: No Nodes>'
+
+    @classmethod
+    def new(cls, method: str, start_page: str, n: int = 1):
+        method = method.lower()
+        if method not in ('dfs', 'bfs'):
+            raise GraphTypeError(
+                '"method" must be "dfs" or "bfs" (got {0})'.format(method)
+            )
+        ret = cls()
+        if method.startswith('dfs'):
+            ret.depth_first_search(start_page, n)
+        elif method.startswith('bfs'):
+            ret.breadth_first_search(start_page, n)
 
     @classmethod
     def new_dfs(cls, start_page: str, n: int = 1):
@@ -45,16 +69,19 @@ class WikiGraph(object):
     def breadth_first_search(self, start_page: str, n: int = 1):
         url = name_to_url(start_page)
         i = self.add_node(WikiNode(url, 0))
-        queue = deque([i])
+        queue = deque()
+        queue.append(i)
         while queue:
             nd = self.nodes[queue.popleft()]
             if nd.level > n:
                 continue
+
             nd.get_links()
             inter = set(self.node_map.keys()) & set(nd.out_paths)
             for link in nd.out_paths:
                 if link in self.node_map:
                     continue
+
                 j = self.add_node(WikiNode(link, nd.level + 1))
                 queue.append(j)
 
@@ -63,11 +90,13 @@ class WikiGraph(object):
         """
         url = name_to_url(start_page)
         i = self.add_node(WikiNode(url, 0))
-        stack = deque([i])
+        stack = deque()
+        stack.append(i)
         while stack:
             nd = self.nodes[stack.pop()]
             if nd.level > n:
                 continue
+
             nd.get_links()
             # inter = set(self.node_map.keys()) & set(nd.out_paths)
             for link in nd.out_paths:

@@ -1,27 +1,23 @@
 import os
 from typing import Set, Iterable
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 
 from bs4 import BeautifulSoup
 import requests
 
 
 def pct_decode(inp: str) -> str:
-    while '%' in inp:
-        idx = inp.find('%')
-        h = inp[idx + 1:idx + 3]
-        c = chr(int(h, 16))
-        inp = inp.replace('%' + h, c)
-
-    return inp
+    return unquote(inp)
 
 
 def wiki_links(tag) -> bool:
     href = tag.attrs.get('href')
     if href is None:
         return False
+
     if 'Main_Page' in href:
         return False
+
     return href.startswith('/wiki') and (':' not in href)
 
 
@@ -37,6 +33,7 @@ def page_links(page_name: str) -> Set[str]:
     links = set()
     if res.status_code != requests.codes.ok:
         return links
+
     soup = BeautifulSoup(res.content, 'lxml')
     for link in soup(wiki_links):
         links.add(''.join((wiki_en, link['href'])))

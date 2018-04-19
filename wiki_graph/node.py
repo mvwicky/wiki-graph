@@ -10,14 +10,17 @@ from bs4 import BeautifulSoup
 import requests
 
 
+# We're gonna be making a lot of requests, so use a session
+node_session = requests.Session()
+
 # Epsilon value
 EPS = sys.float_info.epsilon
 
 
 def req(url, verbose=False):
     """Make a request, sleeping for a random period of time afterwards"""
-    res = requests.get(url)  # Make a request
-    slp_tm = (random.random() + EPS) * 2.5  # Calculate sleep time
+    res = node_session.get(url)  # Make a request
+    slp_tm = (random.random() + EPS) * 2.5  # Generate sleep time
     if verbose:
         print(slp_tm)
     time.sleep(slp_tm)
@@ -54,7 +57,8 @@ class WikiNode(object):
         return ret
 
     def find_links(self):
-        links = set()
+        """Return a set of links from a page"""
+        links = set()  # Use a set so we don't duplicate
         res = req(self.link)
         if res.status_code != requests.codes.ok:
             return links
