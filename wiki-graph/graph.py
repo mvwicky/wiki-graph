@@ -31,7 +31,7 @@ class WikiGraph(object):
         elif isinstance(item, WikiNode):
             return item.link in self.node_map
         else:
-            raise NotImplementedError
+            raise NotImplementedError('What is {0!r}?'.format(type(item)))
 
     def __iter__(self):
         return iter(self.nodes)
@@ -39,10 +39,26 @@ class WikiGraph(object):
     @classmethod
     def new_dfs(cls, start_page: str, n: int = 1):
         ret = cls()
-        ret.dfs(start_page, n)
+        ret.depth_first_search(start_page, n)
         return ret
 
-    def dfs(self, start_page: str, n: int = 1):
+    def breadth_first_search(self, start_page: str, n: int = 1):
+        url = name_to_url(start_page)
+        i = self.add_node(WikiNode(url, 0))
+        queue = deque([i])
+        while queue:
+            nd = self.nodes[queue.popleft()]
+            if nd.level > n:
+                continue
+            nd.get_links()
+            inter = set(self.node_map.keys()) & set(nd.out_paths)
+            for link in nd.out_paths:
+                if link in self.node_map:
+                    continue
+                j = self.add_node(WikiNode(link, nd.level + 1))
+                queue.append(j)
+
+    def depth_first_search(self, start_page: str, n: int = 1):
         """Run depth first search from the start page to a specified depth (n)
         """
         url = name_to_url(start_page)
@@ -53,7 +69,7 @@ class WikiGraph(object):
             if nd.level > n:
                 continue
             nd.get_links()
-            inter = set(self.node_map.keys()) & set(nd.out_paths)
+            # inter = set(self.node_map.keys()) & set(nd.out_paths)
             for link in nd.out_paths:
                 if link not in self.node_map:
                     j = self.add_node(WikiNode(link, nd.level + 1))

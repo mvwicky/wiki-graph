@@ -11,7 +11,10 @@ AUTHOR = 'Michael Van Wickle'
 REQUIRED = [
     'attrs',
     'bs4',
-    'requests'
+    'profilehooks',
+    'requests',
+    'sqlalchemy',
+    'sqlalchemy-utils'
 ]
 
 setup(

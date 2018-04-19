@@ -53,12 +53,3 @@ def draw_graph(page_name, depth=1):
         soup.svg.append(nt)
     with open(page_name + '.svg', 'wt') as f:
         f.write(soup.prettify())
-
-
-def adj_list(N=10):
-    pass
-
-
-if __name__ == '__main__':
-    random.seed()
-    draw_graph('Federal_Digital_System')

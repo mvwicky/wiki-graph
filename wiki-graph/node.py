@@ -30,9 +30,9 @@ class WikiNode(object):
     TODO: Change outpaths to be a list of integers, indices to a global list
           Maybe just change everything to indices"""
     wiki_url: ClassVar[str] = 'https://en.wikipedia.org'
-    link: str = attr.ib(type=str)
-    level: int = attr.ib(type=int)
-    out_paths: List[str] = attr.ib(default=attr.Factory(list), type=list)
+    link: str = attr.ib()
+    level: int = attr.ib()
+    out_paths: List[str] = attr.ib(default=attr.Factory(list))
 
     @property
     def page_name(self) -> str:
