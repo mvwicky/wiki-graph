@@ -77,7 +77,7 @@ class WikiGraph(object):
                 continue
 
             nd.get_links()
-            inter = set(self.node_map.keys()) & set(nd.out_paths)
+            # inter = set(self.node_map.keys()) & set(nd.out_paths)
             for link in nd.out_paths:
                 if link in self.node_map:
                     continue

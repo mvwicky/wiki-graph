@@ -6,10 +6,6 @@ from bs4 import BeautifulSoup
 import requests
 
 
-def pct_decode(inp: str) -> str:
-    return unquote(inp)
-
-
 def wiki_links(tag) -> bool:
     href = tag.attrs.get('href')
     if href is None:
@@ -53,4 +49,4 @@ if __name__ == '__main__':
     res = ses.get(url)
     for link in res.html.links:
         if link.startswith('/wiki'):
-            print(pct_decode(link))
+            print(unquote(link))

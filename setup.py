@@ -15,6 +15,7 @@ REQUIRED = [
     'click',
     'profilehooks',
     'requests',
+    'requests_html',
     'sqlalchemy',
     'sqlalchemy-utils'
 ]
