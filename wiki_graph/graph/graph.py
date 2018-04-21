@@ -59,11 +59,6 @@ class WikiGraph(object):
             ret.depth_first_search(start_page, n)
         elif method.startswith('bfs'):
             ret.breadth_first_search(start_page, n)
-
-    @classmethod
-    def new_dfs(cls, start_page: str, n: int = 1):
-        ret = cls()
-        ret.depth_first_search(start_page, n)
         return ret
 
     def breadth_first_search(self, start_page: str, n: int = 1):

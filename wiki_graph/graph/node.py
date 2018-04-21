@@ -10,23 +10,6 @@ from bs4 import BeautifulSoup
 import requests
 
 
-# We're gonna be making a lot of requests, so use a session
-node_session = requests.Session()
-
-# Epsilon value
-EPS = sys.float_info.epsilon
-
-
-def req(url, verbose=False):
-    """Make a request, sleeping for a random period of time afterwards"""
-    res = node_session.get(url)  # Make a request
-    slp_tm = (random.random() + EPS) * 2.5  # Generate sleep time
-    if verbose:
-        print(slp_tm)
-    time.sleep(slp_tm)
-    return res
-
-
 @attr.s(slots=True)
 class WikiNode(object):
     """A Graph Node
