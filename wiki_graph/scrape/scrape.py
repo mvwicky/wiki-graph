@@ -16,20 +16,20 @@ EPS = sys.float_info.epsilon
 
 
 @attr.s(slots=True, auto_attribs=True)
-class WikiPageLinks(object):
+class WikiPage(object):
     session: ClassVar[requests_html.HTMLSession] = requests_html.HTMLSession()
-    base_url: ClassVar[str] = 'https://en.wikipedia.org'
-    link_prefix: ClassVar[str] = 'wiki'
+    base: ClassVar[str] = 'https://en.wikipedia.org'
+    prefix: ClassVar[str] = 'wiki'
     req_timeout: ClassVar[timedelta] = timedelta(days=1)
 
     page_name: str = attr.ib(
         converter=lambda s: s.replace(' ', '_').lower())
-    url: str = attr.ib(default=None)
-    _html: Optional[requests_html.HTML] = attr.ib(default=None)
-    _last_req: datetime = attr.ib(default=datetime.min)
-
-    def __attrs_post_init__(self):
-        self.url = '/'.join([self.base_url, self.link_prefix, self.page_name])
+    url: str = attr.ib(default=attr.Factory(
+        lambda s: '/'.join([s.base, s.prefix, s.page_name]), takes_self=True))
+    _html: Optional[requests_html.HTML] = attr.ib(init=False, default=None)
+    _links: Set[str] = attr.ib(
+        init=False, repr=False, default=attr.Factory(set))
+    _last_req: datetime = attr.ib(init=False, default=datetime.min)
 
     @classmethod
     def from_url(cls, url: str):
@@ -39,7 +39,7 @@ class WikiPageLinks(object):
         return cls(page_name)
 
     @classmethod
-    def req(cls, url: str):
+    def req(cls, url: str) -> requests.Request:
         """Make a request, sleeping for a random period of time afterwards"""
         res = cls.session.get(url)
         slp_tm = (random.random() + EPS) * 2.5  # Generate sleep time
@@ -57,26 +57,33 @@ class WikiPageLinks(object):
         return self._html
 
     @property
+    def title(self) -> str:
+        return self.html.find('title', first=True).text
+
+    @property
     def links(self) -> Set[str]:
         """Return relative paths (to normal wikipedia pages), except for the
         base page
         """
-        pref = '/{p}/'.format(p=self.link_prefix)
+        diff = datetime.utcnow() - self._last_req
+        if not self._links or diff > self.req_timeout:
+            pref = '/{p}/'.format(p=self.prefix)
 
-        def _filt(x: str) -> bool:
-            if 'Main_Page' in x:
-                return False
-            return x.startswith(pref) and (':' not in x)
+            def _filt(x: str) -> bool:
+                if 'Main_Page' in x:
+                    return False
+                return x.startswith(pref) and (':' not in x)
 
-        # Unescape quotes and filter out non-wiki pages
-        def _map(x: str) -> str:
-            return unquote(x.lower())
-        uq_links = filter(_filt, map(_map, self.html.links))
-        return set(uq_links).difference([pref + self.page_name])
+            def _map(x: str) -> str:
+                return unquote(x.lower())
+            # Unescape quotes and filter out non-wiki pages
+            uq_links = filter(_filt, map(_map, self.html.links))
+            self._links = set(uq_links).difference([pref + self.page_name])
+        return self._links
 
     @property
     def absolute_links(self) -> Set[str]:
-        return set(map(lambda x: self.base_url + x, self.links))
+        return set(map(lambda x: self.base + x, self.links))
 
 
 def wiki_links(tag) -> bool:

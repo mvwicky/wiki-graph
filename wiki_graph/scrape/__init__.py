@@ -1,1 +1,1 @@
-from .scrape import WikiPageLinks
+from .scrape import WikiPage

@@ -1,6 +1,6 @@
 import click
 
-from wiki_graph.scrape import WikiPageLinks  # noqa
+from wiki_graph.scrape import WikiPage
 # from wiki_graph.graph import WikiGraph
 
 
@@ -24,11 +24,12 @@ def search(pagename, method, depth):
 def links(pagename):
     click.secho(pagename, fg='red')
     # w = WikiPageLinks('Bicameralism_(psychology)')
-    w = WikiPageLinks(pagename)
+    w = WikiPage(pagename)
     for link in w.absolute_links:
-        click.echo(link, nl=False)
+        click.echo(link)
     click.echo(len(w.links))
     click.echo(repr(w))
+    click.echo(w.title)
 
 
 cli.add_command(search)
