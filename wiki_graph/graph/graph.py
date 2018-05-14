@@ -1,24 +1,11 @@
-import abc
 import os
 from collections import deque
-from typing import List, ClassVar, Union, Set
+from typing import List, ClassVar, Union, Dict, Set
 
 import attr
 
 from wiki_graph.scrape import name_to_url
-from wiki_graph.node import WikiNode
-
-
-class AbstractNode(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def page_name(self) -> str:
-        ...
-
-    @property
-    @abc.abstractmethod
-    def links(self) -> Set[str]:
-        ...
+from wiki_graph.node import AbstractNode
 
 
 class GraphTypeError(Exception):
@@ -30,22 +17,23 @@ class WikiGraph(object):
     """From a starting Wikipedia article (nodes[0]), view the pages to which it
     links, to a specified depth
 
-    nodes: a list of pages, which store their link and the pages to which they
-           link
+    nodes: a list of pages, which store their own link and the pages to which
+           they link
     adj: an adjacency list (probably gonna be deleted)
-    node_map: maps links to nodes indicies"""
+    node_map: maps links to nodes indicies
+    """
 
     nodes: List[AbstractNode] = attr.ib(default=attr.Factory(list))
     # Adjacency List
-    adj: dict = attr.ib(default=attr.Factory(dict))
+    adj: List[Set[int]] = attr.ib(default=attr.Factory(list))
     # Map url to adjacency matrix index
-    node_map: dict = attr.ib(default=attr.Factory(dict))
+    node_map: Dict[str, int] = attr.ib(default=attr.Factory(dict))
 
     def __contains__(self, item: Union[str, WikiNode]):
         if isinstance(item, str):
             return item in self.node_map
 
-        elif isinstance(item, WikiNode):
+        elif isinstance(item, AbstractNode):
             return item.link in self.node_map
 
         else:
@@ -84,9 +72,7 @@ class WikiGraph(object):
             if nd.level > n:
                 continue
 
-            nd.get_links()
-            # inter = set(self.node_map.keys()) & set(nd.out_paths)
-            for link in nd.out_paths:
+            for link in nd.links:
                 if link in self.node_map:
                     continue
 
@@ -105,14 +91,18 @@ class WikiGraph(object):
             if nd.level > n:
                 continue
 
-            nd.get_links()
-            # inter = set(self.node_map.keys()) & set(nd.out_paths)
-            for link in nd.out_paths:
+            for link in nd.links:
                 if link not in self.node_map:
                     j = self.add_node(WikiNode(link, nd.level + 1))
                     stack.append(j)
 
     def add_node(self, node):
+        if node.url not in self.node_map:
+            idx = len(self.node_map)
+            self.node_map[node.url] = idx
+            self.adj.append(set())
+        return self.node_map[node.url]
+
         if node.link not in self.node_map:
             idx = len(self.nodes)
             self.node_map[node.link] = idx

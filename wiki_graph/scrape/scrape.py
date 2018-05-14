@@ -1,3 +1,4 @@
+import abc
 from datetime import datetime, timedelta
 import os
 import random
@@ -15,8 +16,25 @@ import requests_html
 EPS = sys.float_info.epsilon
 
 
+class AbstractNode(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def url(self) -> str:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def page_name(self) -> str:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def links(self) -> Set[str]:
+        ...
+
+
 @attr.s(slots=True, auto_attribs=True)
-class WikiPage(object):
+class WikiPage(AbstractNode):
     """A single node in the graph: a wikipedia page
     Class Variables:
     session: a requests_html session, for getting the actual page markup,
