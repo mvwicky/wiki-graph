@@ -17,15 +17,32 @@ EPS = sys.float_info.epsilon
 
 @attr.s(slots=True, auto_attribs=True)
 class WikiPage(object):
+    """A single node in the graph: a wikipedia page
+    Class Variables:
+    session: a requests_html session, for getting the actual page markup,
+             which is parsed
+    base: the base wikipedia address, hypothetically could be changed to point
+          to non-english wikis
+    prefix: the part that goes between base and the page name
+    req_timeout: age of a request after which time we consider it stale
+
+    Instance Variables:
+    _page_name: the name of the page which this node represents
+    _url: the url of the page which this node represents
+    _html: the markup of the page
+    _links: a set containing the links contained on this page
+    _last_req: the date/time of the last request, so we can periodically
+               refresh the page
+    """
     session: ClassVar[requests_html.HTMLSession] = requests_html.HTMLSession()
     base: ClassVar[str] = 'https://en.wikipedia.org'
     prefix: ClassVar[str] = 'wiki'
     req_timeout: ClassVar[timedelta] = timedelta(days=1)
 
-    page_name: str = attr.ib(
-        converter=lambda s: s.replace(' ', '_').lower())
-    url: str = attr.ib(default=attr.Factory(
-        lambda s: '/'.join([s.base, s.prefix, s.page_name]), takes_self=True))
+    _page_name: str = attr.ib(
+        converter=lambda s: str(s).replace(' ', '_'))
+    _url: str = attr.ib(default=attr.Factory(
+        lambda s: '/'.join([s.base, s.prefix, s._page_name]), takes_self=True))
     _html: Optional[requests_html.HTML] = attr.ib(init=False, default=None)
     _links: Set[str] = attr.ib(
         init=False, repr=False, default=attr.Factory(set))
@@ -45,6 +62,14 @@ class WikiPage(object):
         slp_tm = (random.random() + EPS) * 2.5  # Generate sleep time
         time.sleep(slp_tm)
         return res
+
+    @property
+    def page_name(self) -> str:
+        return self._page_name
+
+    @property
+    def url(self) -> str:
+        return self._url
 
     @property
     def html(self) -> requests_html.HTML:
@@ -75,7 +100,7 @@ class WikiPage(object):
                 return x.startswith(pref) and (':' not in x)
 
             def _map(x: str) -> str:
-                return unquote(x.lower())
+                return unquote(x)
             # Unescape quotes and filter out non-wiki pages
             uq_links = filter(_filt, map(_map, self.html.links))
             self._links = set(uq_links).difference([pref + self.page_name])

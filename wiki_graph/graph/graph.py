@@ -1,11 +1,24 @@
+import abc
 import os
 from collections import deque
-from typing import List, ClassVar, Union
+from typing import List, ClassVar, Union, Set
 
 import attr
 
 from wiki_graph.scrape import name_to_url
 from wiki_graph.node import WikiNode
+
+
+class AbstractNode(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def page_name(self) -> str:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def links(self) -> Set[str]:
+        ...
 
 
 class GraphTypeError(Exception):
@@ -22,7 +35,7 @@ class WikiGraph(object):
     adj: an adjacency list (probably gonna be deleted)
     node_map: maps links to nodes indicies"""
 
-    nodes: List[WikiNode] = attr.ib(default=attr.Factory(list))
+    nodes: List[AbstractNode] = attr.ib(default=attr.Factory(list))
     # Adjacency List
     adj: dict = attr.ib(default=attr.Factory(dict))
     # Map url to adjacency matrix index
